@@ -2,141 +2,161 @@
 
 A comprehensive web application for managing, importing, exporting, and merging product catalogs from multiple sources.
 
-## Project Structure
+## Features
 
-```
-catalogV1.12/
-├── frontend/           # React frontend application
-│   ├── src/           # Source code
-│   ├── public/        # Static assets
-│   └── package.json   # Dependencies and scripts
-├── backend/           # FastAPI backend application
-│   ├── app/          # Application code
-│   ├── tests/        # Test suite
-│   └── requirements.txt # Python dependencies
-├── infrastructure/    # Docker and deployment configs
-│   ├── docker/       # Docker configuration files
-│   └── elestio/      # Elestio deployment configs
-└── docs/             # Project documentation
-```
+- **Dynamic Catalog Import**
+  - Support for CSV, Excel, and JSON formats
+  - Automatic column detection and mapping
+  - Data validation and error handling
+  - Background processing for large files
+
+- **Field Mapping**
+  - Interactive mapping interface
+  - Template support
+  - Custom field transformations
+
+- **Supplier Management**
+  - Multiple connection types (FTP, SFTP, API, Email)
+  - Automated import scheduling
+  - Connection health monitoring
+
+- **Dashboard & Reporting**
+  - Real-time import status
+  - Error tracking and reporting
+  - Activity monitoring
 
 ## Technology Stack
-
-### Frontend
-- React.js with TypeScript
-- Material-UI for components
-- Redux Toolkit for state management
-- React Query for API integration
 
 ### Backend
 - FastAPI (Python 3.11+)
 - SQLAlchemy ORM
-- Celery for background tasks
-- JWT authentication
+- PostgreSQL
+- Redis & Celery
+- MinIO (S3-compatible storage)
+
+### Frontend
+- React 18 with TypeScript
+- Material-UI
+- React Query
+- PWA Support
 
 ### Infrastructure
-- PostgreSQL database
-- Redis for caching and message broker
-- MinIO for object storage
 - Docker & Docker Compose
-- Elestio for deployment
+- GitHub Actions
+- Elestio Deployment
+- Nginx
 
-## Development Setup
+## Getting Started
 
+### Prerequisites
+- Docker and Docker Compose
+- Git
+
+### Quick Start
 1. Clone the repository:
-```bash
-git clone https://github.com/gaidar0yegor/catalogV1.12.git
-cd catalogV1.12
-```
+   ```bash
+   git clone https://github.com/gaidar0yegor/catalogV1.12.git
+   cd catalogV1.12
+   ```
 
-2. Create and activate a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+2. Run the initialization script:
+   ```bash
+   ./scripts/init-dev.sh
+   ```
 
-3. Install backend dependencies:
+3. Access the applications:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
+   - MinIO Console: http://localhost:9001
+
+### Manual Setup
+
+1. Create environment files:
+   ```bash
+   cp backend/.env.example backend/.env
+   cp frontend/.env.example frontend/.env
+   ```
+
+2. Start the services:
+   ```bash
+   docker-compose up -d
+   ```
+
+3. Run database migrations:
+   ```bash
+   docker-compose exec backend alembic upgrade head
+   ```
+
+## Development
+
+### Backend Development
 ```bash
 cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+uvicorn app.main:app --reload
 ```
 
-4. Install frontend dependencies:
+### Frontend Development
 ```bash
 cd frontend
 npm install
+npm run dev
 ```
 
-5. Start the development environment:
+### Running Tests
+Backend:
 ```bash
-docker-compose up -d
+cd backend
+pytest
 ```
 
-## Development Workflow
-
-1. Create a feature branch:
+Frontend:
 ```bash
-git checkout -b feature/your-feature-name
+cd frontend
+npm test
 ```
-
-2. Make changes and commit:
-```bash
-git add .
-git commit -m "Description of changes"
-```
-
-3. Push changes:
-```bash
-git push origin feature/your-feature-name
-```
-
-4. Create a Pull Request on GitHub
-
-## Features
-
-### 1. Catalog Import
-- Multiple file format support (CSV, Excel, JSON)
-- Dynamic column mapping
-- Data validation
-- Background processing for large files
-
-### 2. Field Mapping
-- Interactive mapping interface
-- Template support
-- Custom field transformations
-
-### 3. Catalog Export
-- Multiple format export
-- Custom field selection
-- Filtered exports
-
-### 4. Supplier Management
-- Supplier profiles
-- Connection credentials
-- Import history
-
-### 5. Dashboard
-- Import/Export history
-- Processing status
-- Error reporting
 
 ## Deployment
 
-The application is automatically deployed to Elestio when changes are merged to the main branch. The deployment process includes:
+The application is automatically deployed to Elestio when changes are merged into the main branch.
 
-1. Automated testing
-2. Docker image building
-3. Database migrations
-4. Zero-downtime deployment
+### Manual Deployment
+1. Build the images:
+   ```bash
+   docker-compose -f docker-compose.prod.yml build
+   ```
+
+2. Deploy:
+   ```bash
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to your fork
-5. Create a Pull Request
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+### Branching Strategy
+- `main`: Production releases
+- `develop`: Development branch
+- `feature/*`: New features
+- `bugfix/*`: Bug fixes
+- `hotfix/*`: Emergency fixes
+- `release/*`: Release preparation
+
+## Documentation
+
+- [API Documentation](http://localhost:8000/docs)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Frontend Documentation](frontend/README.md)
+- [Backend Documentation](backend/README.md)
 
 ## License
 
 This project is proprietary software. All rights reserved.
+
+## Support
+
+For support, please create an issue in the GitHub repository or contact the maintainers directly.
