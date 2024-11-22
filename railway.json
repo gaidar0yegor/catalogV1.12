@@ -2,52 +2,11 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "./docker-compose.yml"
+    "dockerfilePath": "backend/Dockerfile"
   },
   "deploy": {
-    "startCommand": "docker-compose up -d",
+    "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
-  },
-  "variables": {
-    "ENVIRONMENT": "production",
-    "PGUSER": "{{PGUSER}}",
-    "PGPASSWORD": "{{PGPASSWORD}}",
-    "PGDATABASE": "{{PGDATABASE}}",
-    "PGHOST": "{{PGHOST}}",
-    "PGPORT": "{{PGPORT}}",
-    "REDISHOST": "{{REDISHOST}}",
-    "REDISPORT": "{{REDISPORT}}",
-    "MINIO_ROOT_USER": "{{MINIO_ROOT_USER}}",
-    "MINIO_ROOT_PASSWORD": "{{MINIO_ROOT_PASSWORD}}",
-    "SECRET_KEY": "{{SECRET_KEY}}"
-  },
-  "services": {
-    "web": {
-      "healthcheck": {
-        "path": "/health",
-        "port": 8000
-      },
-      "ports": [
-        {
-          "port": 80,
-          "internal": 80
-        },
-        {
-          "port": 8000,
-          "internal": 8000
-        }
-      ]
-    }
-  },
-  "plugins": {
-    "postgresql": {
-      "version": "15",
-      "enabled": true
-    },
-    "redis": {
-      "version": "7",
-      "enabled": true
-    }
   }
 }
