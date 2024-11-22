@@ -8,12 +8,12 @@ import {
   StepLabel,
   Typography,
   Grid,
-  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Alert,
+  SelectChangeEvent,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
@@ -40,8 +40,8 @@ export default function CatalogImport() {
     }
   };
 
-  const handleSourceTypeChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setSourceType(event.target.value as string);
+  const handleSourceTypeChange = (event: SelectChangeEvent<string>) => {
+    setSourceType(event.target.value);
   };
 
   const getStepContent = (step: number) => {
