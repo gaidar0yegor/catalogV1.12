@@ -2,6 +2,26 @@ app:
   name: catalogV1.12
   type: docker-compose
   domain: catalogv1-12-u23037.vm.elestio.app
+  branch: develop
+  buildCommand: |
+    # Install frontend dependencies and build
+    cd frontend
+    npm ci
+    npm run build
+    
+    # Install backend dependencies
+    cd ../backend
+    pip install -r requirements.txt
+
+  postDeployCommand: |
+    # Run database migrations
+    docker-compose exec -T backend alembic upgrade head
+    
+    # Initialize MinIO bucket
+    docker-compose exec -T backend python -c "
+    from app.core.database import init_minio
+    init_minio()
+    "
 
 variables:
   - name: POSTGRES_USER
@@ -94,16 +114,24 @@ volumes:
   minio_data:
     name: catalog_minio_data
 
-deploy:
-  - name: Initialize Database
-    command: docker-compose exec -T backend alembic upgrade head
+reverseProxy:
+  - path: /
+    target: http://frontend:3000
+  - path: /api
+    target: http://backend:8000
+    stripPrefix: true
+  - path: /minio
+    target: http://minio:9000
+    stripPrefix: true
+  - path: /minio-console
+    target: http://minio:9001
+    stripPrefix: true
 
-  - name: Create MinIO Bucket
-    command: |
-      docker-compose exec -T backend python -c "
-      from app.core.database import init_minio
-      init_minio()
-      "
+nginx:
+  recreateConfig: true
+  customConfig: |
+    # Load configuration from our production nginx config
+    include /etc/nginx/conf.d/nginx.prod.conf;
 
 monitoring:
   - name: Frontend Health
