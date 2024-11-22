@@ -1,6 +1,27 @@
 app:
   name: catalogV1.12
   type: docker-compose
+  domain: catalogv1-12-u23037.vm.elestio.app
+  branch: develop
+  buildCommand: |
+    # Install frontend dependencies and build
+    cd frontend
+    npm ci
+    npm run build
+    
+    # Install backend dependencies
+    cd ../backend
+    pip install -r requirements.txt
+
+  postDeployCommand: |
+    # Run database migrations
+    docker-compose exec -T backend alembic upgrade head
+    
+    # Initialize MinIO bucket
+    docker-compose exec -T backend python -c "
+    from app.core.database import init_minio
+    init_minio()
+    "
 
 variables:
   - name: POSTGRES_USER
@@ -31,81 +52,111 @@ variables:
     secret: true
     
   - name: JWT_SECRET_KEY
-    value: your-secret-key-here
+    value: your-production-secret-key-here
     description: JWT secret key for authentication
     required: true
     secret: true
 
+  - name: DOMAIN
+    value: catalogv1-12-u23037.vm.elestio.app
+    description: Application domain
+    required: true
+
 services:
   frontend:
     port: 3000
-    env:
-      - VITE_API_URL=${API_URL}
+    env_file: frontend/.env.production
+    environment:
+      - VITE_API_URL=https://${DOMAIN}/api
+      - VITE_PUBLIC_URL=https://${DOMAIN}
 
   backend:
     port: 8000
-    env:
+    env_file: backend/.env.production
+    environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - REDIS_URL=redis://redis:6379
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
       - MINIO_URL=minio:9000
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - BACKEND_CORS_ORIGINS=["https://${DOMAIN}"]
 
   postgres:
     port: 5432
-    env:
+    environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    port: 6379
+    volumes:
+      - redis_data:/data
 
   minio:
     ports:
       - 9000:9000
       - 9001:9001
-    env:
+    environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
 
-pipelines:
-  - name: Build and Deploy
-    triggers:
-      - type: push
-        branches:
-          - main
-          - develop
-    steps:
-      - name: Build Images
-        command: docker-compose build
+volumes:
+  postgres_data:
+    name: catalog_postgres_data
+  redis_data:
+    name: catalog_redis_data
+  minio_data:
+    name: catalog_minio_data
 
-      - name: Run Tests
-        command: |
-          docker-compose run backend pytest
-          docker-compose run frontend npm test
+reverseProxy:
+  - path: /
+    target: http://frontend:3000
+  - path: /api
+    target: http://backend:8000
+    stripPrefix: true
+  - path: /minio
+    target: http://minio:9000
+    stripPrefix: true
+  - path: /minio-console
+    target: http://minio:9001
+    stripPrefix: true
 
-      - name: Deploy
-        command: docker-compose up -d
-
-      - name: Database Migrations
-        command: docker-compose run backend alembic upgrade head
+nginx:
+  recreateConfig: true
+  customConfig: |
+    # Load configuration from our production nginx config
+    include /etc/nginx/conf.d/nginx.prod.conf;
 
 monitoring:
-  enabled: true
-  metrics:
-    - type: http
-      name: Frontend Health
-      url: http://localhost:3000/health
-      interval: 30s
-      
-    - type: http
-      name: Backend Health
-      url: http://localhost:8000/health
-      interval: 30s
+  - name: Frontend Health
+    url: https://${DOMAIN}
+    interval: 30s
+    
+  - name: Backend Health
+    url: https://${DOMAIN}/api/health
+    interval: 30s
+    
+  - name: MinIO Console
+    url: https://${DOMAIN}:9001
+    interval: 30s
 
 backup:
-  enabled: true
-  services:
-    - postgres
-    - minio
-  schedule: "0 0 * * *"  # Daily backup at midnight
-  retention: 7  # Keep backups for 7 days
+  - name: Database Backup
+    source: /var/lib/postgresql/data
+    schedule: "0 0 * * *"
+    retention: 7
+    
+  - name: MinIO Backup
+    source: /data/minio
+    schedule: "0 0 * * *"
+    retention: 7
+
+maintenance:
+  update_schedule: "0 2 * * 0"  # Every Sunday at 2 AM
+  auto_update: false
