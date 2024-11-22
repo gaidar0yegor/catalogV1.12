@@ -1,43 +1,12 @@
-app:
-  name: catalogV1.12
-  type: docker-compose
-  domain: catalogv1-12-u23037.vm.elestio.app
-  branch: develop
-  buildCommand: |
-    # Create necessary directories
-    mkdir -p /opt/app/catalogv1.12/backend
-    mkdir -p /opt/app/catalogv1.12/frontend
-    
-    # Copy files to correct locations
-    cp -r backend/* /opt/app/catalogv1.12/backend/
-    cp -r frontend/* /opt/app/catalogv1.12/frontend/
-    
-    # Install frontend dependencies and build
-    cd /opt/app/catalogv1.12/frontend
-    npm ci
-    npm run build
-    
-    # Install backend dependencies
-    cd /opt/app/catalogv1.12/backend
-    pip install -r requirements.txt
-
-  postDeployCommand: |
-    # Run database migrations
-    cd /opt/app/catalogv1.12
-    docker-compose exec -T backend alembic upgrade head
-    
-    # Initialize MinIO bucket
-    docker-compose exec -T backend python -c "
-    from app.core.database import init_minio
-    init_minio()
-    "
+version: '3.8'
 
 services:
   frontend:
     build:
-      context: /opt/app/catalogv1.12/frontend
-      dockerfile: ../infrastructure/docker/frontend.Dockerfile
-    port: 3000
+      context: .
+      dockerfile: infrastructure/docker/frontend.Dockerfile
+    ports:
+      - "3000:3000"
     environment:
       - VITE_API_URL=${VITE_API_URL}
       - VITE_PUBLIC_URL=${VITE_PUBLIC_URL}
@@ -58,12 +27,15 @@ services:
       - VITE_ALLOWED_FILE_TYPES=${VITE_ALLOWED_FILE_TYPES}
       - VITE_TOAST_DURATION=${VITE_TOAST_DURATION}
       - VITE_ENABLE_PUSH_NOTIFICATIONS=${VITE_ENABLE_PUSH_NOTIFICATIONS}
+    depends_on:
+      - backend
 
   backend:
     build:
-      context: /opt/app/catalogv1.12/backend
-      dockerfile: ../infrastructure/docker/backend.Dockerfile
-    port: 8000
+      context: .
+      dockerfile: infrastructure/docker/backend.Dockerfile
+    ports:
+      - "8000:8000"
     environment:
       - API_V1_STR=${API_V1_STR}
       - PROJECT_NAME=${PROJECT_NAME}
@@ -85,10 +57,15 @@ services:
       - RELOAD=${RELOAD}
       - DEBUG=${DEBUG}
       - LOG_LEVEL=${LOG_LEVEL}
+    depends_on:
+      - postgres
+      - redis
+      - minio
 
   postgres:
     image: postgres:15-alpine
-    port: 5432
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -98,15 +75,16 @@ services:
 
   redis:
     image: redis:7-alpine
-    port: 6379
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
 
   minio:
     image: minio/minio
     ports:
-      - 9000:9000
-      - 9001:9001
+      - "9000:9000"
+      - "9001:9001"
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
@@ -121,50 +99,3 @@ volumes:
     name: catalog_redis_data
   minio_data:
     name: catalog_minio_data
-
-reverseProxy:
-  - path: /
-    target: http://frontend:3000
-  - path: /api
-    target: http://backend:8000
-    stripPrefix: true
-  - path: /minio
-    target: http://minio:9000
-    stripPrefix: true
-  - path: /minio-console
-    target: http://minio:9001
-    stripPrefix: true
-
-nginx:
-  recreateConfig: true
-  customConfig: |
-    # Load configuration from our production nginx config
-    include /etc/nginx/conf.d/nginx.prod.conf;
-
-monitoring:
-  - name: Frontend Health
-    url: https://${DOMAIN}
-    interval: 30s
-    
-  - name: Backend Health
-    url: https://${DOMAIN}/api/health
-    interval: 30s
-    
-  - name: MinIO Console
-    url: https://${DOMAIN}:9001
-    interval: 30s
-
-backup:
-  - name: Database Backup
-    source: /var/lib/postgresql/data
-    schedule: "0 0 * * *"
-    retention: 7
-    
-  - name: MinIO Backup
-    source: /data/minio
-    schedule: "0 0 * * *"
-    retention: 7
-
-maintenance:
-  update_schedule: "0 2 * * 0"  # Every Sunday at 2 AM
-  auto_update: false
