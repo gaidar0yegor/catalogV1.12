@@ -23,64 +23,53 @@ app:
     init_minio()
     "
 
-variables:
-  - name: POSTGRES_USER
-    value: catalog_user
-    description: PostgreSQL database user
-    required: true
-    
-  - name: POSTGRES_PASSWORD
-    value: catalog_password
-    description: PostgreSQL database password
-    required: true
-    secret: true
-    
-  - name: POSTGRES_DB
-    value: catalog_db
-    description: PostgreSQL database name
-    required: true
-    
-  - name: MINIO_ROOT_USER
-    value: minioadmin
-    description: MinIO root user
-    required: true
-    
-  - name: MINIO_ROOT_PASSWORD
-    value: minioadmin
-    description: MinIO root password
-    required: true
-    secret: true
-    
-  - name: JWT_SECRET_KEY
-    value: your-production-secret-key-here
-    description: JWT secret key for authentication
-    required: true
-    secret: true
-
-  - name: DOMAIN
-    value: catalogv1-12-u23037.vm.elestio.app
-    description: Application domain
-    required: true
-
 services:
   frontend:
     port: 3000
-    env_file: frontend/.env.production
     environment:
-      - VITE_API_URL=https://${DOMAIN}/api
-      - VITE_PUBLIC_URL=https://${DOMAIN}
+      - VITE_API_URL=${VITE_API_URL}
+      - VITE_PUBLIC_URL=${VITE_PUBLIC_URL}
+      - VITE_APP_NAME=${VITE_APP_NAME}
+      - VITE_APP_VERSION=${VITE_APP_VERSION}
+      - VITE_ENABLE_PWA=${VITE_ENABLE_PWA}
+      - VITE_ENABLE_ANALYTICS=${VITE_ENABLE_ANALYTICS}
+      - VITE_ENABLE_ERROR_REPORTING=${VITE_ENABLE_ERROR_REPORTING}
+      - VITE_DEFAULT_LANGUAGE=${VITE_DEFAULT_LANGUAGE}
+      - VITE_ITEMS_PER_PAGE=${VITE_ITEMS_PER_PAGE}
+      - VITE_STORAGE_PREFIX=${VITE_STORAGE_PREFIX}
+      - VITE_AUTH_TOKEN_KEY=${VITE_AUTH_TOKEN_KEY}
+      - VITE_USER_SETTINGS_KEY=${VITE_USER_SETTINGS_KEY}
+      - VITE_CACHE_TTL=${VITE_CACHE_TTL}
+      - VITE_STALE_TIME=${VITE_STALE_TIME}
+      - VITE_RETRY_ATTEMPTS=${VITE_RETRY_ATTEMPTS}
+      - VITE_MAX_FILE_SIZE=${VITE_MAX_FILE_SIZE}
+      - VITE_ALLOWED_FILE_TYPES=${VITE_ALLOWED_FILE_TYPES}
+      - VITE_TOAST_DURATION=${VITE_TOAST_DURATION}
+      - VITE_ENABLE_PUSH_NOTIFICATIONS=${VITE_ENABLE_PUSH_NOTIFICATIONS}
 
   backend:
     port: 8000
-    env_file: backend/.env.production
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      - REDIS_URL=redis://redis:6379
+      - API_V1_STR=${API_V1_STR}
+      - PROJECT_NAME=${PROJECT_NAME}
+      - VERSION=${VERSION}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-      - MINIO_URL=minio:9000
+      - MINIO_URL=${MINIO_URL}
+      - MINIO_SECURE=${MINIO_SECURE}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - BACKEND_CORS_ORIGINS=["https://${DOMAIN}"]
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - HOST=${HOST}
+      - PORT=${PORT}
+      - WORKERS=${WORKERS}
+      - RELOAD=${RELOAD}
+      - DEBUG=${DEBUG}
+      - LOG_LEVEL=${LOG_LEVEL}
 
   postgres:
     port: 5432
