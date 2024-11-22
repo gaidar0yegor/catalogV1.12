@@ -1,0 +1,111 @@
+app:
+  name: catalogV1.12
+  type: docker-compose
+
+variables:
+  - name: POSTGRES_USER
+    value: catalog_user
+    description: PostgreSQL database user
+    required: true
+    
+  - name: POSTGRES_PASSWORD
+    value: catalog_password
+    description: PostgreSQL database password
+    required: true
+    secret: true
+    
+  - name: POSTGRES_DB
+    value: catalog_db
+    description: PostgreSQL database name
+    required: true
+    
+  - name: MINIO_ROOT_USER
+    value: minioadmin
+    description: MinIO root user
+    required: true
+    
+  - name: MINIO_ROOT_PASSWORD
+    value: minioadmin
+    description: MinIO root password
+    required: true
+    secret: true
+    
+  - name: JWT_SECRET_KEY
+    value: your-secret-key-here
+    description: JWT secret key for authentication
+    required: true
+    secret: true
+
+services:
+  frontend:
+    port: 3000
+    env:
+      - VITE_API_URL=${API_URL}
+
+  backend:
+    port: 8000
+    env:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_URL=minio:9000
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+
+  postgres:
+    port: 5432
+    env:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+
+  minio:
+    ports:
+      - 9000:9000
+      - 9001:9001
+    env:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+
+pipelines:
+  - name: Build and Deploy
+    triggers:
+      - type: push
+        branches:
+          - main
+          - develop
+    steps:
+      - name: Build Images
+        command: docker-compose build
+
+      - name: Run Tests
+        command: |
+          docker-compose run backend pytest
+          docker-compose run frontend npm test
+
+      - name: Deploy
+        command: docker-compose up -d
+
+      - name: Database Migrations
+        command: docker-compose run backend alembic upgrade head
+
+monitoring:
+  enabled: true
+  metrics:
+    - type: http
+      name: Frontend Health
+      url: http://localhost:3000/health
+      interval: 30s
+      
+    - type: http
+      name: Backend Health
+      url: http://localhost:8000/health
+      interval: 30s
+
+backup:
+  enabled: true
+  services:
+    - postgres
+    - minio
+  schedule: "0 0 * * *"  # Daily backup at midnight
+  retention: 7  # Keep backups for 7 days
