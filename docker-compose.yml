@@ -1,85 +1,89 @@
 version: '3.8'
 
 services:
-  frontend:
-    build:
-      context: ../../frontend
-      dockerfile: ../infrastructure/docker/frontend.Dockerfile
-    ports:
-      - "3000:3000"
-    volumes:
-      - ../../frontend:/app
-      - /app/node_modules
-    environment:
-      - VITE_API_URL=http://localhost:8000
-    depends_on:
-      - backend
-
   backend:
     build:
-      context: ../../backend
-      dockerfile: ../infrastructure/docker/backend.Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: catalog-backend
     ports:
       - "8000:8000"
-    volumes:
-      - ../../backend:/app
     environment:
-      - DATABASE_URL=postgresql://catalog_user:catalog_password@postgres:5432/catalog_db
-      - REDIS_URL=redis://redis:6379
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
-      - MINIO_URL=minio:9000
+      - POSTGRES_USER=${PGUSER}
+      - POSTGRES_PASSWORD=${PGPASSWORD}
+      - POSTGRES_DB=${PGDATABASE}
+      - POSTGRES_HOST=${PGHOST}
+      - POSTGRES_PORT=${PGPORT}
+      - REDIS_HOST=${REDISHOST}
+      - REDIS_PORT=${REDISPORT}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=production
     depends_on:
       - postgres
       - redis
       - minio
+    networks:
+      - catalog-network
+    restart: unless-stopped
 
-  celery_worker:
+  frontend:
     build:
-      context: ../../backend
-      dockerfile: ../infrastructure/docker/backend.Dockerfile
-    command: celery -A app.worker worker --loglevel=info
-    volumes:
-      - ../../backend:/app
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: catalog-frontend
+    ports:
+      - "80:80"
     environment:
-      - DATABASE_URL=postgresql://catalog_user:catalog_password@postgres:5432/catalog_db
-      - REDIS_URL=redis://redis:6379
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
-      - MINIO_URL=minio:9000
+      - VITE_API_URL=/api/v1
+      - NODE_ENV=production
     depends_on:
-      - postgres
-      - redis
-      - minio
+      - backend
+    networks:
+      - catalog-network
+    restart: unless-stopped
 
   postgres:
     image: postgres:15-alpine
-    ports:
-      - "5432:5432"
+    container_name: catalog-postgres
     environment:
-      - POSTGRES_USER=catalog_user
-      - POSTGRES_PASSWORD=catalog_password
-      - POSTGRES_DB=catalog_db
+      - POSTGRES_USER=${PGUSER}
+      - POSTGRES_PASSWORD=${PGPASSWORD}
+      - POSTGRES_DB=${PGDATABASE}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - catalog-network
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    container_name: catalog-redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - catalog-network
+    restart: unless-stopped
 
   minio:
-    image: minio/minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
+    image: minio/minio:latest
+    container_name: catalog-minio
     command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
+    networks:
+      - catalog-network
+    restart: unless-stopped
+
+networks:
+  catalog-network:
+    driver: bridge
 
 volumes:
   postgres_data:
+  redis_data:
   minio_data:

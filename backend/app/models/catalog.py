@@ -1,78 +1,45 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON, Table
+from sqlalchemy import Column, Integer, String, JSON, DateTime, ForeignKey
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from datetime import datetime
-from ..core.database import Base
-
-# Association table for catalog fields
-catalog_fields = Table(
-    'catalog_fields',
-    Base.metadata,
-    Column('catalog_id', Integer, ForeignKey('catalogs.id'), primary_key=True),
-    Column('field_id', Integer, ForeignKey('fields.id'), primary_key=True)
-)
+from ..db.base import Base
 
 class Catalog(Base):
     __tablename__ = "catalogs"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    supplier_id = Column(Integer, ForeignKey('suppliers.id'))
-    file_path = Column(String)  # Path in MinIO
-    status = Column(String)  # pending, processing, completed, failed
-    import_type = Column(String)  # csv, excel, json
-    row_count = Column(Integer, default=0)
-    error_count = Column(Integer, default=0)
-    error_log = Column(JSON, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    processed_at = Column(DateTime, nullable=True)
+    name = Column(String, nullable=False)
+    description = Column(String)
+    source_type = Column(String, nullable=False)  # file, api, ftp, etc.
+    schema = Column(JSON, nullable=False)  # Stores column definitions
+    created_by = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    supplier = relationship("Supplier", back_populates="catalogs")
-    fields = relationship("Field", secondary=catalog_fields, back_populates="catalogs")
-    products = relationship("Product", back_populates="catalog")
+    user = relationship("User", back_populates="catalogs")
 
-class Field(Base):
-    __tablename__ = "fields"
+class CatalogData(Base):
+    __tablename__ = "catalog_data"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    display_name = Column(String)
-    field_type = Column(String)  # string, number, date, etc.
-    is_required = Column(Boolean, default=False)
-    validation_rules = Column(JSON, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    catalog_id = Column(Integer, ForeignKey("catalogs.id"), nullable=False)
+    data = Column(JSON, nullable=False)  # Stores the actual product data
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    catalogs = relationship("Catalog", secondary=catalog_fields, back_populates="fields")
+    catalog = relationship("Catalog", back_populates="data")
 
-class Product(Base):
-    __tablename__ = "products"
+class ColumnMapping(Base):
+    __tablename__ = "column_mappings"
 
     id = Column(Integer, primary_key=True, index=True)
-    catalog_id = Column(Integer, ForeignKey('catalogs.id'))
-    sku = Column(String, index=True)
-    data = Column(JSON)  # Stores all product fields dynamically
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    catalog_id = Column(Integer, ForeignKey("catalogs.id"), nullable=False)
+    source_column = Column(String, nullable=False)
+    target_column = Column(String, nullable=False)
+    transformation_rule = Column(JSON)  # Optional transformation rules
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    catalog = relationship("Catalog", back_populates="products")
-
-class ImportJob(Base):
-    __tablename__ = "import_jobs"
-
-    id = Column(Integer, primary_key=True, index=True)
-    catalog_id = Column(Integer, ForeignKey('catalogs.id'))
-    status = Column(String)  # pending, processing, completed, failed
-    total_rows = Column(Integer, default=0)
-    processed_rows = Column(Integer, default=0)
-    error_count = Column(Integer, default=0)
-    error_log = Column(JSON, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    started_at = Column(DateTime, nullable=True)
-    completed_at = Column(DateTime, nullable=True)
-
-    # Relationships
-    catalog = relationship("Catalog")
+    catalog = relationship("Catalog", back_populates="column_mappings")

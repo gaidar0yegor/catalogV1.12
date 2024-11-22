@@ -1,162 +1,177 @@
-# Catalog Management System v1.12
+# Catalog Management System
 
-A comprehensive web application for managing, importing, exporting, and merging product catalogs from multiple sources.
+A web application for managing, importing, exporting, and merging product catalogs from multiple sources.
 
 ## Features
 
-- **Dynamic Catalog Import**
-  - Support for CSV, Excel, and JSON formats
-  - Automatic column detection and mapping
-  - Data validation and error handling
-  - Background processing for large files
+- Dynamic column handling for imports
+- Multiple import sources (CSV, Excel, JSON)
+- Column mapping and validation
+- Catalog merging
+- Export functionality
+- User authentication and authorization
 
-- **Field Mapping**
-  - Interactive mapping interface
-  - Template support
-  - Custom field transformations
+## Tech Stack
 
-- **Supplier Management**
-  - Multiple connection types (FTP, SFTP, API, Email)
-  - Automated import scheduling
-  - Connection health monitoring
+- **Frontend**:
+  - React with TypeScript
+  - Material-UI
+  - React Query
+  - Zustand for state management
+  - Vite for build tooling
 
-- **Dashboard & Reporting**
-  - Real-time import status
-  - Error tracking and reporting
-  - Activity monitoring
+- **Backend**:
+  - FastAPI (Python)
+  - PostgreSQL
+  - Redis for caching
+  - MinIO for file storage
+  - Celery for background tasks
 
-## Technology Stack
+- **Infrastructure**:
+  - Docker & Docker Compose
+  - Railway.app for deployment
+  - Nginx for frontend serving
 
-### Backend
-- FastAPI (Python 3.11+)
-- SQLAlchemy ORM
-- PostgreSQL
-- Redis & Celery
-- MinIO (S3-compatible storage)
+## Development Setup
 
-### Frontend
-- React 18 with TypeScript
-- Material-UI
-- React Query
-- PWA Support
+1. **Prerequisites**:
+   - Docker and Docker Compose
+   - Git
 
-### Infrastructure
-- Docker & Docker Compose
-- GitHub Actions
-- Elestio Deployment
-- Nginx
-
-## Getting Started
-
-### Prerequisites
-- Docker and Docker Compose
-- Git
-
-### Quick Start
-1. Clone the repository:
+2. **Clone the repository**:
    ```bash
-   git clone https://github.com/gaidar0yegor/catalogV1.12.git
-   cd catalogV1.12
+   git clone <repository-url>
+   cd catalog-management
    ```
 
-2. Run the initialization script:
+3. **Environment Setup**:
    ```bash
-   ./scripts/init-dev.sh
-   ```
-
-3. Access the applications:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs
-   - MinIO Console: http://localhost:9001
-
-### Manual Setup
-
-1. Create environment files:
-   ```bash
-   cp backend/.env.example backend/.env
+   # Copy environment files
+   cp .env.example .env
    cp frontend/.env.example frontend/.env
    ```
 
-2. Start the services:
+4. **Start Development Environment**:
    ```bash
    docker-compose up -d
    ```
 
-3. Run database migrations:
+   The application will be available at:
+   - Frontend: http://localhost:80
+   - Backend API: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
+
+## Railway.app Deployment
+
+1. **Prerequisites**:
+   - Railway.app account
+   - Railway CLI installed
+
+2. **Initial Setup**:
    ```bash
-   docker-compose exec backend alembic upgrade head
+   # Login to Railway
+   railway login
+
+   # Link project
+   railway link
    ```
 
-## Development
+3. **Configure Variables**:
+   Set up the following variables in Railway.app dashboard:
+   - `PGUSER`
+   - `PGPASSWORD`
+   - `PGDATABASE`
+   - `PGHOST`
+   - `PGPORT`
+   - `REDISHOST`
+   - `REDISPORT`
+   - `MINIO_ROOT_USER`
+   - `MINIO_ROOT_PASSWORD`
+   - `SECRET_KEY`
+   - `ENVIRONMENT=production`
 
-### Backend Development
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-### Frontend Development
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Running Tests
-Backend:
-```bash
-cd backend
-pytest
-```
-
-Frontend:
-```bash
-cd frontend
-npm test
-```
-
-## Deployment
-
-The application is automatically deployed to Elestio when changes are merged into the main branch.
-
-### Manual Deployment
-1. Build the images:
+4. **Deploy**:
    ```bash
-   docker-compose -f docker-compose.prod.yml build
+   railway up
    ```
 
-2. Deploy:
-   ```bash
-   docker-compose -f docker-compose.prod.yml up -d
-   ```
+## Project Structure
+
+```
+.
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   ├── core/
+│   │   ├── db/
+│   │   └── models/
+│   ├── alembic/
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── api/
+│   │   └── utils/
+│   ├── Dockerfile
+│   └── nginx.conf
+├── docker-compose.yml
+├── railway.json
+└── README.md
+```
+
+## Development Guidelines
+
+1. **Code Style**:
+   - Frontend: ESLint & Prettier
+   - Backend: Black & isort
+   - Use TypeScript for frontend development
+   - Write comprehensive tests
+
+2. **Git Workflow**:
+   - Create feature branches from `main`
+   - Use conventional commits
+   - Submit PRs for review
+
+3. **API Development**:
+   - Follow RESTful principles
+   - Document all endpoints
+   - Include request/response examples
+
+## Available Scripts
+
+- **Frontend**:
+  ```bash
+  # Development
+  npm run dev
+
+  # Build
+  npm run build
+
+  # Type checking
+  npm run type-check
+  ```
+
+- **Backend**:
+  ```bash
+  # Start server
+  uvicorn app.main:app --reload
+
+  # Run migrations
+  alembic upgrade head
+
+  # Create migration
+  alembic revision --autogenerate -m "description"
+  ```
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
-
-### Branching Strategy
-- `main`: Production releases
-- `develop`: Development branch
-- `feature/*`: New features
-- `bugfix/*`: Bug fixes
-- `hotfix/*`: Emergency fixes
-- `release/*`: Release preparation
-
-## Documentation
-
-- [API Documentation](http://localhost:8000/docs)
-- [Contributing Guidelines](CONTRIBUTING.md)
-- [Frontend Documentation](frontend/README.md)
-- [Backend Documentation](backend/README.md)
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
 ## License
 
-This project is proprietary software. All rights reserved.
-
-## Support
-
-For support, please create an issue in the GitHub repository or contact the maintainers directly.
+This project is licensed under the MIT License - see the LICENSE file for details.
