@@ -4,17 +4,26 @@ app:
   domain: catalogv1-12-u23037.vm.elestio.app
   branch: develop
   buildCommand: |
+    # Create necessary directories
+    mkdir -p /opt/app/catalogv1.12/backend
+    mkdir -p /opt/app/catalogv1.12/frontend
+    
+    # Copy files to correct locations
+    cp -r backend/* /opt/app/catalogv1.12/backend/
+    cp -r frontend/* /opt/app/catalogv1.12/frontend/
+    
     # Install frontend dependencies and build
-    cd frontend
+    cd /opt/app/catalogv1.12/frontend
     npm ci
     npm run build
     
     # Install backend dependencies
-    cd ../backend
+    cd /opt/app/catalogv1.12/backend
     pip install -r requirements.txt
 
   postDeployCommand: |
     # Run database migrations
+    cd /opt/app/catalogv1.12
     docker-compose exec -T backend alembic upgrade head
     
     # Initialize MinIO bucket
@@ -25,6 +34,9 @@ app:
 
 services:
   frontend:
+    build:
+      context: /opt/app/catalogv1.12/frontend
+      dockerfile: ../infrastructure/docker/frontend.Dockerfile
     port: 3000
     environment:
       - VITE_API_URL=${VITE_API_URL}
@@ -48,6 +60,9 @@ services:
       - VITE_ENABLE_PUSH_NOTIFICATIONS=${VITE_ENABLE_PUSH_NOTIFICATIONS}
 
   backend:
+    build:
+      context: /opt/app/catalogv1.12/backend
+      dockerfile: ../infrastructure/docker/backend.Dockerfile
     port: 8000
     environment:
       - API_V1_STR=${API_V1_STR}
@@ -72,6 +87,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
 
   postgres:
+    image: postgres:15-alpine
     port: 5432
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -81,11 +97,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
+    image: redis:7-alpine
     port: 6379
     volumes:
       - redis_data:/data
 
   minio:
+    image: minio/minio
     ports:
       - 9000:9000
       - 9001:9001
@@ -94,6 +112,7 @@ services:
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
+    command: server /data --console-address ":9001"
 
 volumes:
   postgres_data:
