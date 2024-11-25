@@ -15,7 +15,8 @@ app.add_middleware(
         "https://catalog-manage.up.railway.app",
         "https://magnificent-love.railway.internal",
         "http://localhost:3000",  # For local development
-        "http://localhost:5173"   # For Vite dev server
+        "http://localhost:5173",  # For Vite dev server
+        "http://10.250.13.6:8080"  # For Railway internal network
     ],
     allow_credentials=True,
     allow_methods=["*"],
