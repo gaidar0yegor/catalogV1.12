@@ -1,50 +1,45 @@
-// Catalog Types
-export interface Catalog {
-  id: number;
-  name: string;
-  description: string;
-  sourceType: string;
-  createdAt: string;
-  updatedAt: string;
+export interface ApiResponse<T> {
+  data: T;
+  message: string | null;
 }
 
-export interface CatalogColumn {
-  name: string;
-  type: string;
-  required: boolean;
-  description?: string;
-}
-
-export interface ColumnMapping {
-  sourceColumn: string;
-  targetColumn: string;
-  transformationRule?: string;
-}
-
-// User Types
 export interface User {
   id: number;
   email: string;
-  fullName: string;
-  isActive: boolean;
-  isSuperuser: boolean;
 }
 
-// API Response Types
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  error?: string;
+export interface Catalog {
+  id: number;
+  name: string;
+  description: string | null;
+  source_type: string;
+  schema: Record<string, string>;
+  created_by: number | null;
+  created_at: string;
+  updated_at: string | null;
+  column_mappings: ColumnMapping[];
 }
 
-// Theme Types
-export interface ThemeMode {
-  mode: 'light' | 'dark';
+export interface ColumnMapping {
+  id?: number;
+  catalog_id?: number;
+  source_column: string;
+  target_column: string;
+  transformation_rule: TransformationRule | null;
+  created_at?: string;
+  updated_at?: string | null;
 }
 
-// Form Types
-export interface ImportSettings {
-  sourceType: string;
-  file: File | null;
-  columnMappings: ColumnMapping[];
+export interface TransformationRule {
+  type: 'uppercase' | 'lowercase' | 'number' | 'boolean' | 'replace';
+  find?: string;
+  replace?: string;
+}
+
+export interface CatalogData {
+  id: number;
+  catalog_id: number;
+  data: Record<string, any>;
+  created_at: string;
+  updated_at: string | null;
 }

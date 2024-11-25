@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -11,11 +13,15 @@ import {
   TableRow,
   Typography,
   Button,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { catalogApi } from '../../api/api';
+import type { Catalog } from '../../types';
 
 interface Column {
-  id: 'name' | 'description' | 'sourceType' | 'createdAt' | 'actions';
+  id: 'name' | 'description' | 'source_type' | 'created_at' | 'actions';
   label: string;
   minWidth?: number;
   align?: 'right' | 'left' | 'center';
@@ -24,32 +30,22 @@ interface Column {
 const columns: Column[] = [
   { id: 'name', label: 'Name', minWidth: 170 },
   { id: 'description', label: 'Description', minWidth: 200 },
-  { id: 'sourceType', label: 'Source Type', minWidth: 100 },
-  { id: 'createdAt', label: 'Created At', minWidth: 170 },
+  { id: 'source_type', label: 'Source Type', minWidth: 100 },
+  { id: 'created_at', label: 'Created At', minWidth: 170 },
   { id: 'actions', label: 'Actions', minWidth: 100, align: 'right' },
 ];
 
-interface CatalogData {
-  id: number;
-  name: string;
-  description: string;
-  sourceType: string;
-  createdAt: string;
-}
-
-const sampleData: CatalogData[] = [
-  {
-    id: 1,
-    name: 'Sample Catalog',
-    description: 'A sample product catalog',
-    sourceType: 'CSV',
-    createdAt: new Date().toISOString(),
-  },
-];
-
 export default function CatalogList() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Fetch catalogs using React Query
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['catalogs'],
+    queryFn: catalogApi.getAll,
+    retry: 2,
+  });
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -59,6 +55,35 @@ export default function CatalogList() {
     setRowsPerPage(+event.target.value);
     setPage(0);
   };
+
+  const handleNewCatalog = () => {
+    navigate('/catalogs/import');
+  };
+
+  const handleViewCatalog = (id: number) => {
+    navigate(`/catalogs/${id}`);
+  };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ mt: 2 }}>
+        <Alert severity="error">
+          An error occurred while loading catalogs. Please try again later.
+          {error instanceof Error && error.message}
+        </Alert>
+      </Box>
+    );
+  }
+
+  const catalogs = data?.data || [];
 
   return (
     <Box>
@@ -70,9 +95,9 @@ export default function CatalogList() {
           variant="contained"
           color="primary"
           startIcon={<AddIcon />}
-          onClick={() => {/* TODO: Implement new catalog creation */}}
+          onClick={handleNewCatalog}
         >
-          New Catalog
+          Import Catalog
         </Button>
       </Box>
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
@@ -92,35 +117,51 @@ export default function CatalogList() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sampleData
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row) => (
-                  <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
-                    <TableCell>{row.name}</TableCell>
-                    <TableCell>{row.description}</TableCell>
-                    <TableCell>{row.sourceType}</TableCell>
-                    <TableCell>
-                      {new Date(row.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Button color="primary" size="small">
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {catalogs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} align="center">
+                    <Typography variant="body1" sx={{ py: 2 }}>
+                      No catalogs found. Click "Import Catalog" to add your first catalog.
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                catalogs
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((row: Catalog) => (
+                    <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
+                      <TableCell>{row.name}</TableCell>
+                      <TableCell>{row.description}</TableCell>
+                      <TableCell>{row.source_type}</TableCell>
+                      <TableCell>
+                        {new Date(row.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell align="right">
+                        <Button
+                          color="primary"
+                          size="small"
+                          onClick={() => handleViewCatalog(row.id)}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 100]}
-          component="div"
-          count={sampleData.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
+        {catalogs.length > 0 && (
+          <TablePagination
+            rowsPerPageOptions={[10, 25, 100]}
+            component="div"
+            count={catalogs.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
+        )}
       </Paper>
     </Box>
   );

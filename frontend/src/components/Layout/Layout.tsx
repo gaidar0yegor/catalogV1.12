@@ -38,7 +38,7 @@ export default function Layout({ children }: LayoutProps) {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Catalogs', icon: <TableChartIcon />, path: '/catalogs' },
-    { text: 'Import', icon: <CloudUploadIcon />, path: '/import' },
+    { text: 'Import', icon: <CloudUploadIcon />, path: '/catalogs/import' },
   ];
 
   const drawer = (

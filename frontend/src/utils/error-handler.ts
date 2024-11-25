@@ -1,4 +1,4 @@
-import { AxiosError } from 'axios';
+import axios, { AxiosError } from 'axios';
 import type { ApiResponse } from '../types';
 
 export class ApiError extends Error {
@@ -14,7 +14,7 @@ export class ApiError extends Error {
 }
 
 export function handleApiError(error: unknown): ApiError {
-  if (error instanceof AxiosError) {
+  if (axios.isAxiosError(error)) {
     const status = error.response?.status || 500;
     const message = error.response?.data?.message || error.message;
     const data = error.response?.data;

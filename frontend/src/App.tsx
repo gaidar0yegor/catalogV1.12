@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@mui/material/styles';
 import { Box, Container, CircularProgress, Alert, Typography } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
-import Layout from './components/Layout';
+import Layout from './components/Layout/Layout';
 import theme from './theme';
 
 // Error Boundary Component
@@ -56,22 +56,22 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 // Lazy load pages
-const Dashboard = lazy(() => import('./pages/Dashboard').catch(err => {
+const Dashboard = lazy(() => import('./pages/Dashboard/Dashboard').catch(err => {
   console.error('Failed to load Dashboard:', err);
   throw err;
 }));
 
-const CatalogList = lazy(() => import('./pages/CatalogList').catch(err => {
+const CatalogList = lazy(() => import('./pages/CatalogList/CatalogList').catch(err => {
   console.error('Failed to load CatalogList:', err);
   throw err;
 }));
 
-const CatalogImport = lazy(() => import('./pages/CatalogImport').catch(err => {
+const CatalogImport = lazy(() => import('./pages/CatalogImport/CatalogImport').catch(err => {
   console.error('Failed to load CatalogImport:', err);
   throw err;
 }));
 
-const CatalogMapping = lazy(() => import('./pages/CatalogMapping').catch(err => {
+const CatalogMapping = lazy(() => import('./pages/CatalogMapping/CatalogMapping').catch(err => {
   console.error('Failed to load CatalogMapping:', err);
   throw err;
 }));
