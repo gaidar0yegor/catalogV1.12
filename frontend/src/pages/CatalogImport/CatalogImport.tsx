@@ -1,163 +1,193 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import type { UseMutationResult } from '@tanstack/react-query';
 import {
   Box,
   Button,
-  Paper,
-  Stepper,
-  Step,
-  StepLabel,
-  Typography,
+  Card,
+  CardContent,
+  CircularProgress,
   Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  TextField,
+  Typography,
   Alert,
-  SelectChangeEvent,
+  Paper,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-
-const steps = ['Upload File', 'Map Columns', 'Review & Import'];
+import { catalogApi } from '../../api/api';
+import type { ApiResponse, Catalog } from '../../types';
 
 export default function CatalogImport() {
-  const [activeStep, setActiveStep] = useState(0);
+  const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
-  const [sourceType, setSourceType] = useState('');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleNext = () => {
-    setActiveStep((prevStep) => prevStep + 1);
-  };
-
-  const handleBack = () => {
-    setActiveStep((prevStep) => prevStep - 1);
-  };
+  const uploadMutation: UseMutationResult<
+    ApiResponse<Catalog>,
+    Error,
+    FormData
+  > = useMutation({
+    mutationFn: async (formData: FormData) => {
+      return catalogApi.create(formData);
+    },
+    onSuccess: (response) => {
+      // Navigate to mapping page with the new catalog ID
+      navigate(`/catalogs/${response.data.id}/mapping`);
+    },
+    onError: (error: Error) => {
+      setError(error.message || 'Error uploading catalog');
+    },
+  });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
-      setError(null);
+      const selectedFile = event.target.files[0];
+      setFile(selectedFile);
+      
+      // Auto-fill name from filename if not already set
+      if (!name) {
+        setName(selectedFile.name.split('.')[0]);
+      }
     }
   };
 
-  const handleSourceTypeChange = (event: SelectChangeEvent<string>) => {
-    setSourceType(event.target.value);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+
+    if (!file) {
+      setError('Please select a file to upload');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('name', name);
+    if (description) {
+      formData.append('description', description);
+    }
+
+    uploadMutation.mutate(formData);
   };
 
-  const getStepContent = (step: number) => {
-    switch (step) {
-      case 0:
-        return (
-          <Box sx={{ mt: 2 }}>
+  return (
+    <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        Import Catalog
+      </Typography>
+
+      <Card sx={{ mb: 4 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Supported Formats
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={4}>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="subtitle1">.CSV</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Comma-separated values
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={4}>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="subtitle1">.XLSX</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Excel spreadsheet
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={4}>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="subtitle1">.JSON</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  JSON data format
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      <form onSubmit={handleSubmit}>
+        <Card>
+          <CardContent>
             <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Source Type</InputLabel>
-                  <Select
-                    value={sourceType}
-                    onChange={handleSourceTypeChange}
-                    label="Source Type"
-                  >
-                    <MenuItem value="csv">CSV File</MenuItem>
-                    <MenuItem value="excel">Excel File</MenuItem>
-                    <MenuItem value="json">JSON File</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
               <Grid item xs={12}>
                 <Button
                   variant="outlined"
                   component="label"
                   startIcon={<CloudUploadIcon />}
                   fullWidth
-                  sx={{ height: '100px' }}
+                  sx={{ height: 100 }}
                 >
                   {file ? file.name : 'Choose File'}
                   <input
                     type="file"
                     hidden
+                    accept=".csv,.xlsx,.xls,.json"
                     onChange={handleFileChange}
-                    accept=".csv,.xlsx,.json"
                   />
                 </Button>
               </Grid>
-            </Grid>
-          </Box>
-        );
-      case 1:
-        return (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Map Columns
-            </Typography>
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Please map the columns from your file to the system fields
-            </Alert>
-            {/* Column mapping interface will be implemented here */}
-            <Typography color="text.secondary">
-              Column mapping interface coming soon...
-            </Typography>
-          </Box>
-        );
-      case 2:
-        return (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Review Import Settings
-            </Typography>
-            <Grid container spacing={2}>
+
               <Grid item xs={12}>
-                <Paper sx={{ p: 2 }}>
-                  <Typography variant="subtitle1">File Information</Typography>
-                  <Typography color="text.secondary">
-                    {file?.name || 'No file selected'}
-                  </Typography>
-                </Paper>
+                <TextField
+                  label="Catalog Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  fullWidth
+                  required
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  label="Description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  fullWidth
+                  multiline
+                  rows={3}
+                />
+              </Grid>
+
+              {error && (
+                <Grid item xs={12}>
+                  <Alert severity="error">{error}</Alert>
+                </Grid>
+              )}
+
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigate('/catalogs')}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={uploadMutation.status === 'pending'}
+                    startIcon={
+                      uploadMutation.status === 'pending' ? (
+                        <CircularProgress size={20} />
+                      ) : undefined
+                    }
+                  >
+                    Upload Catalog
+                  </Button>
+                </Box>
               </Grid>
             </Grid>
-          </Box>
-        );
-      default:
-        return 'Unknown step';
-    }
-  };
-
-  return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Import Catalog
-      </Typography>
-      <Paper sx={{ p: 3 }}>
-        <Stepper activeStep={activeStep}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-        <Box sx={{ mt: 4 }}>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          {getStepContent(activeStep)}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-            {activeStep !== 0 && (
-              <Button onClick={handleBack} sx={{ mr: 1 }}>
-                Back
-              </Button>
-            )}
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              disabled={!file || !sourceType}
-            >
-              {activeStep === steps.length - 1 ? 'Import' : 'Next'}
-            </Button>
-          </Box>
-        </Box>
-      </Paper>
+          </CardContent>
+        </Card>
+      </form>
     </Box>
   );
 }

@@ -1,28 +1,42 @@
-import { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { Box, Container, CircularProgress } from '@mui/material';
-import Layout from './components/Layout';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { Layout } from './components/Layout';
+import { Dashboard } from './pages/Dashboard';
+import { CatalogList } from './pages/CatalogList';
+import { CatalogImport, CatalogImportConfirm } from './pages/CatalogImport';
+import { CatalogMapping } from './pages/CatalogMapping';
+import theme from './theme';
 
-// Lazy load pages
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const CatalogList = lazy(() => import('./pages/CatalogList'));
-const CatalogImport = lazy(() => import('./pages/CatalogImport'));
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Layout>
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-          <Suspense fallback={<CircularProgress />}>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router>
+          <Layout>
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/catalogs" element={<CatalogList />} />
-              <Route path="/import" element={<CatalogImport />} />
+              <Route path="/catalogs/import" element={<CatalogImport />} />
+              <Route path="/catalogs/:id/mapping" element={<CatalogMapping />} />
+              <Route path="/catalogs/:id/import" element={<CatalogImportConfirm />} />
             </Routes>
-          </Suspense>
-        </Container>
-      </Layout>
-    </Box>
+          </Layout>
+        </Router>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
