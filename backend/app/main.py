@@ -11,12 +11,13 @@ app = FastAPI(title="Catalog Management API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://catalog-manage.up.railway.app",  # New frontend URL
         "https://catalogv112-frontend-production.up.railway.app",
         "http://localhost:3000",  # For local development
         "http://localhost:5173"   # For Vite dev server
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"]
 )
@@ -48,6 +49,6 @@ async def health_check():
         "status": "healthy",
         "services": {
             "api": "up",
-            "database": "up"  # We can now say database is up since we've initialized it
+            "database": "up"
         }
     }
