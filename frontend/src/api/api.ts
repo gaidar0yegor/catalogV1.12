@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { ApiResponse, Catalog, ColumnMapping } from '../types';
 
-const API_URL = 'https://catalogv112-production.up.railway.app/api/v1';
+const API_URL = import.meta.env.VITE_API_URL;
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
