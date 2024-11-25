@@ -75,7 +75,7 @@ export default function CatalogList() {
     return (
       <Box sx={{ mt: 2 }}>
         <Alert severity="error">
-          Error loading catalogs. Please try again later.
+          An error occurred while loading catalogs. Please try again later.
         </Alert>
       </Box>
     );
@@ -115,39 +115,51 @@ export default function CatalogList() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {catalogs
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row: Catalog) => (
-                  <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
-                    <TableCell>{row.name}</TableCell>
-                    <TableCell>{row.description}</TableCell>
-                    <TableCell>{row.sourceType}</TableCell>
-                    <TableCell>
-                      {new Date(row.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Button
-                        color="primary"
-                        size="small"
-                        onClick={() => handleViewCatalog(row.id)}
-                      >
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {catalogs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} align="center">
+                    <Typography variant="body1" sx={{ py: 2 }}>
+                      No catalogs found. Click "Import Catalog" to add your first catalog.
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                catalogs
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((row: Catalog) => (
+                    <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
+                      <TableCell>{row.name}</TableCell>
+                      <TableCell>{row.description}</TableCell>
+                      <TableCell>{row.sourceType}</TableCell>
+                      <TableCell>
+                        {new Date(row.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell align="right">
+                        <Button
+                          color="primary"
+                          size="small"
+                          onClick={() => handleViewCatalog(row.id)}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 100]}
-          component="div"
-          count={catalogs.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
+        {catalogs.length > 0 && (
+          <TablePagination
+            rowsPerPageOptions={[10, 25, 100]}
+            component="div"
+            count={catalogs.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
+        )}
       </Paper>
     </Box>
   );
