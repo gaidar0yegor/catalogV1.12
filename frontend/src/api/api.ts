@@ -18,6 +18,10 @@ axiosInstance.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Add trailing slash to URLs
+    if (config.url && !config.url.endsWith('/')) {
+      config.url += '/';
+    }
     return config;
   }
 );
@@ -43,19 +47,19 @@ axiosInstance.interceptors.response.use(
 export const catalogApi = {
   // Get all catalogs
   getAll: async () => {
-    const response = await axiosInstance.get<ApiResponse<Catalog[]>>('/catalogs');
+    const response = await axiosInstance.get<ApiResponse<Catalog[]>>('/catalogs/');
     return response.data;
   },
 
   // Get a single catalog by ID
   getById: async (id: number) => {
-    const response = await axiosInstance.get<ApiResponse<Catalog>>(`/catalogs/${id}`);
+    const response = await axiosInstance.get<ApiResponse<Catalog>>(`/catalogs/${id}/`);
     return response.data;
   },
 
   // Create a new catalog
   create: async (data: FormData) => {
-    const response = await axiosInstance.post<ApiResponse<Catalog>>('/catalogs', data, {
+    const response = await axiosInstance.post<ApiResponse<Catalog>>('/catalogs/', data, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -65,25 +69,25 @@ export const catalogApi = {
 
   // Update catalog mapping
   updateMapping: async (id: number, mappings: ColumnMapping[]) => {
-    const response = await axiosInstance.put<ApiResponse<Catalog>>(`/catalogs/${id}/mapping`, { mappings });
+    const response = await axiosInstance.put<ApiResponse<Catalog>>(`/catalogs/${id}/mapping/`, { mappings });
     return response.data;
   },
 
   // Delete a catalog
   delete: async (id: number) => {
-    const response = await axiosInstance.delete<ApiResponse<void>>(`/catalogs/${id}`);
+    const response = await axiosInstance.delete<ApiResponse<void>>(`/catalogs/${id}/`);
     return response.data;
   },
 
   // Import catalog data
   import: async (id: number) => {
-    const response = await axiosInstance.post<ApiResponse<void>>(`/catalogs/${id}/import`);
+    const response = await axiosInstance.post<ApiResponse<void>>(`/catalogs/${id}/import/`);
     return response.data;
   },
 
   // Export catalog data
   export: async (id: number, format: string) => {
-    const response = await axiosInstance.get<Blob>(`/catalogs/${id}/export`, {
+    const response = await axiosInstance.get<Blob>(`/catalogs/${id}/export/`, {
       params: { format },
       responseType: 'blob',
     });
@@ -94,7 +98,7 @@ export const catalogApi = {
 // Auth API endpoints
 export const authApi = {
   login: async (email: string, password: string) => {
-    const response = await axiosInstance.post<ApiResponse<{ token: string }>>('/auth/login', { email, password });
+    const response = await axiosInstance.post<ApiResponse<{ token: string }>>('/auth/login/', { email, password });
     return response.data;
   },
 
@@ -103,7 +107,7 @@ export const authApi = {
   },
 
   getCurrentUser: async () => {
-    const response = await axiosInstance.get<ApiResponse<{ email: string; id: number }>>('/auth/me');
+    const response = await axiosInstance.get<ApiResponse<{ email: string; id: number }>>('/auth/me/');
     return response.data;
   },
 };
