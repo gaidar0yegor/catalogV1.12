@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -11,8 +13,12 @@ import {
   TableRow,
   Typography,
   Button,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { catalogApi } from '../../api/api';
+import type { Catalog } from '../../types';
 
 interface Column {
   id: 'name' | 'description' | 'sourceType' | 'createdAt' | 'actions';
@@ -29,27 +35,16 @@ const columns: Column[] = [
   { id: 'actions', label: 'Actions', minWidth: 100, align: 'right' },
 ];
 
-interface CatalogData {
-  id: number;
-  name: string;
-  description: string;
-  sourceType: string;
-  createdAt: string;
-}
-
-const sampleData: CatalogData[] = [
-  {
-    id: 1,
-    name: 'Sample Catalog',
-    description: 'A sample product catalog',
-    sourceType: 'CSV',
-    createdAt: new Date().toISOString(),
-  },
-];
-
 export default function CatalogList() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Fetch catalogs using React Query
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['catalogs'],
+    queryFn: catalogApi.getAll,
+  });
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -59,6 +54,34 @@ export default function CatalogList() {
     setRowsPerPage(+event.target.value);
     setPage(0);
   };
+
+  const handleNewCatalog = () => {
+    navigate('/import'); // Redirect to the import page for new catalog creation
+  };
+
+  const handleViewCatalog = (id: number) => {
+    navigate(`/catalogs/${id}`);
+  };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ mt: 2 }}>
+        <Alert severity="error">
+          Error loading catalogs. Please try again later.
+        </Alert>
+      </Box>
+    );
+  }
+
+  const catalogs = data?.data || [];
 
   return (
     <Box>
@@ -70,9 +93,9 @@ export default function CatalogList() {
           variant="contained"
           color="primary"
           startIcon={<AddIcon />}
-          onClick={() => {/* TODO: Implement new catalog creation */}}
+          onClick={handleNewCatalog}
         >
-          New Catalog
+          Import Catalog
         </Button>
       </Box>
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
@@ -92,9 +115,9 @@ export default function CatalogList() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sampleData
+              {catalogs
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row) => (
+                .map((row: Catalog) => (
                   <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
                     <TableCell>{row.name}</TableCell>
                     <TableCell>{row.description}</TableCell>
@@ -103,7 +126,11 @@ export default function CatalogList() {
                       {new Date(row.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell align="right">
-                      <Button color="primary" size="small">
+                      <Button
+                        color="primary"
+                        size="small"
+                        onClick={() => handleViewCatalog(row.id)}
+                      >
                         View
                       </Button>
                     </TableCell>
@@ -115,7 +142,7 @@ export default function CatalogList() {
         <TablePagination
           rowsPerPageOptions={[10, 25, 100]}
           component="div"
-          count={sampleData.length}
+          count={catalogs.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
