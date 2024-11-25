@@ -23,7 +23,8 @@ axiosInstance.interceptors.request.use(
       config.url += '/';
     }
     return config;
-  }
+  },
+  (error) => Promise.reject(error)
 );
 
 // Add response interceptor for error handling

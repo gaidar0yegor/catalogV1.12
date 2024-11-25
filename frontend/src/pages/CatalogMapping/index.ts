@@ -1,1 +1,1 @@
-export { default as CatalogMapping } from './CatalogMapping';
+export { default } from './CatalogMapping';

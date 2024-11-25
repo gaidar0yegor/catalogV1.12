@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@mui/material/styles';
 import { Box, Container, CircularProgress, Alert, Typography } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Layout } from './components/Layout';
+import Layout from './components/Layout/Layout';
 import theme from './theme';
 
 // Error Boundary Component

@@ -10,13 +10,15 @@ class Catalog(Base):
     name = Column(String, nullable=False)
     description = Column(String)
     source_type = Column(String, nullable=False)  # file, api, ftp, etc.
-    schema = Column(JSON, nullable=False)  # Stores column definitions
+    column_schema = Column(JSON, nullable=False)  # Stores column definitions
     created_by = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
     user = relationship("User", back_populates="catalogs")
+    data = relationship("CatalogData", back_populates="catalog")
+    column_mappings = relationship("ColumnMapping", back_populates="catalog")
 
 class CatalogData(Base):
     __tablename__ = "catalog_data"
