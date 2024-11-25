@@ -11,8 +11,9 @@ app = FastAPI(title="Catalog Management API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://catalog-manage.up.railway.app",  # New frontend URL
         "https://catalogv112-frontend-production.up.railway.app",
+        "https://catalog-manage.up.railway.app",
+        "https://magnificent-love.railway.internal",
         "http://localhost:3000",  # For local development
         "http://localhost:5173"   # For Vite dev server
     ],
