@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from .api.v1 import catalogs
 
 app = FastAPI(title="Catalog Management API")
 
@@ -11,6 +12,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(catalogs.router, prefix="/api/v1/catalogs", tags=["catalogs"])
 
 @app.get("/")
 async def root():
