@@ -10,10 +10,15 @@ app = FastAPI(title="Catalog Management API")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=[
+        "https://catalogv112-frontend-production.up.railway.app",
+        "http://localhost:3000",  # For local development
+        "http://localhost:5173"   # For Vite dev server
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Create database tables
