@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from .api.v1 import catalogs
+from .db.base import engine, Base, SessionLocal
+from .db.init_db import init_db
 
 app = FastAPI(title="Catalog Management API")
 
@@ -11,6 +15,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
+
+# Initialize database with default data
+db = SessionLocal()
+try:
+    init_db(db)
+finally:
+    db.close()
+
+# Include routers
+app.include_router(catalogs.router, prefix="/api/v1/catalogs", tags=["catalogs"])
 
 @app.get("/")
 async def root():
@@ -26,6 +43,6 @@ async def health_check():
         "status": "healthy",
         "services": {
             "api": "up",
-            # Database and other service checks will be added here
+            "database": "up"  # We can now say database is up since we've initialized it
         }
     }
