@@ -23,7 +23,7 @@ class CatalogBase(BaseModel):
     name: str
     description: Optional[str] = None
     source_type: str
-    schema: Dict[str, Any]
+    column_schema: Dict[str, Any]
 
 class CatalogCreate(CatalogBase):
     pass

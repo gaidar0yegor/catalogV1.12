@@ -24,7 +24,7 @@ def upgrade():
         sa.Column('name', sa.String(), nullable=False),
         sa.Column('description', sa.String(), nullable=True),
         sa.Column('source_type', sa.String(), nullable=False),
-        sa.Column('schema', postgresql.JSON(astext_type=sa.Text()), nullable=False),
+        sa.Column('column_schema', postgresql.JSON(astext_type=sa.Text()), nullable=False),
         sa.Column('created_by', sa.Integer(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),

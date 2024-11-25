@@ -38,7 +38,7 @@ async def create_catalog(
         name=name,
         description=description or "",
         source_type=source_type or file.content_type,
-        schema={"columns": []}  # Will be updated during column mapping
+        column_schema={"columns": []}  # Will be updated during column mapping
     )
     
     db.add(catalog)
